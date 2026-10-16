@@ -112,3 +112,8 @@ jobs:
           uv pip show pytest
           cd libs/kotaemon
           pytest
+
+      - name: Test ktem with pytest
+        run: |
+          source .venv/bin/activate
+          pytest libs/ktem/ktem_tests --ignore=libs/ktem/ktem_tests/test_qa.py
