@@ -32,6 +32,7 @@ from kotaemon.indices.qa.citation_qa_inline import AnswerWithInlineCitation
 from kotaemon.indices.qa.format_context import PrepareEvidencePipeline
 from kotaemon.indices.qa.utils import replace_think_tag_with_details
 from kotaemon.llms import ChatLLM
+from kotaemon.utils.tracing import reduce_answer, run_in_context, traceable
 
 from ..utils import SUPPORTED_LANGUAGE_MAP
 from .base import BaseReasoning
@@ -83,6 +84,25 @@ class AddQueryContextPipeline(BaseComponent):
         return Document(content=resp)
 
 
+def _retrieve_outputs(outputs) -> dict:
+    """Log retrieved docs in LangSmith's retriever format; drop the HTML infos."""
+    docs = outputs[0]
+    return {
+        "documents": [
+            {
+                "page_content": doc.text,
+                "metadata": {
+                    "file_name": doc.metadata.get("file_name"),
+                    "page_label": doc.metadata.get("page_label"),
+                    "doc_id": doc.doc_id,
+                    "score": getattr(doc, "score", None),
+                },
+            }
+            for doc in docs
+        ]
+    }
+
+
 class FullQAPipeline(BaseReasoning):
     """Question answering pipeline. Handle from question to answer"""
 
@@ -105,6 +125,7 @@ class FullQAPipeline(BaseReasoning):
     )
     add_query_context: AddQueryContextPipeline = AddQueryContextPipeline.withx()
 
+    @traceable(name="retrieve", run_type="retriever", process_outputs=_retrieve_outputs)
     def retrieve(
         self, message: str, history: list
     ) -> tuple[list[RetrievedDocument], list[Document]]:
@@ -278,6 +299,7 @@ class FullQAPipeline(BaseReasoning):
     ) -> Document:  # type: ignore
         raise NotImplementedError
 
+    @traceable(name="kotaemon.qa", run_type="chain", reduce_fn=reduce_answer)
     def stream(  # type: ignore
         self, message: str, conv_id: str, history: list, **kwargs  # type: ignore
     ) -> Generator[Document, None, Document]:
@@ -300,7 +322,9 @@ class FullQAPipeline(BaseReasoning):
 
         # generate relevant score using
         if evidence and self.retrievers:
-            scoring_thread = threading.Thread(target=generate_relevant_scores)
+            scoring_thread = threading.Thread(
+                target=run_in_context(generate_relevant_scores)
+            )
             scoring_thread.start()
         else:
             scoring_thread = None

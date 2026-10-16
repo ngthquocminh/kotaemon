@@ -13,6 +13,8 @@ from ktem.settings import BaseSettingGroup, SettingGroup, SettingReasoningGroup
 from theflow.settings import settings
 from theflow.utils.modules import import_dotted_string
 
+from kotaemon.utils.tracing import export_langsmith_env
+
 BASE_PATH = os.environ.get("GR_FILE_ROOT_PATH", "")
 
 
@@ -38,6 +40,8 @@ class BaseApp:
     public_events: list[str] = []
 
     def __init__(self):
+        # LangSmith reads os.environ only; kotaemon keeps its config in .env
+        export_langsmith_env()
         self.dev_mode = getattr(settings, "KH_MODE", "") == "dev"
         self.app_name = getattr(settings, "KH_APP_NAME", "Kotaemon")
         self.app_version = getattr(settings, "KH_APP_VERSION", "")
