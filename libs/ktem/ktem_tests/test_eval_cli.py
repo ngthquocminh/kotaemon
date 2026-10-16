@@ -143,3 +143,15 @@ def test_summarize_skips_none():
         for s in (1.0, None, 0.0)
     ]
     assert cli.summarize(rows) == {"k": (0.5, 2)}
+
+
+def test_row_delay_sleeps_before_each_row(setup, mocker):
+    sleeps = mocker.patch.object(cli.time, "sleep")
+    assert cli.main(["--dataset", str(setup.path), "--row-delay", "15"]) == 0
+    sleeps.assert_called_once_with(15.0)  # one row in the fixture dataset
+
+
+def test_no_row_delay_by_default(setup, mocker):
+    sleeps = mocker.patch.object(cli.time, "sleep")
+    assert cli.main(["--dataset", str(setup.path)]) == 0
+    sleeps.assert_not_called()

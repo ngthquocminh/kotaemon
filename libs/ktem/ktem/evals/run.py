@@ -8,6 +8,7 @@ Run from the repository root (theflow reads ``./flowsettings.py``)::
 import argparse
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
@@ -50,6 +51,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--experiment-prefix", help="LangSmith experiment prefix")
     parser.add_argument(
         "--max-concurrency", type=int, default=2, help="parallel rows (default 2)"
+    )
+    parser.add_argument(
+        "--row-delay",
+        type=float,
+        default=0.0,
+        help="seconds to wait before each row, to stay under provider rate limits",
     )
     parser.add_argument(
         "--prune",
@@ -119,8 +126,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         example_ids=[example_id(dataset_name, ex.question) for ex in examples],
     )
 
+    target = make_target(ctx.build_pipeline, ctx.citation_mode)
+    if args.row_delay > 0:
+        run_row = target
+
+        def target(inputs: dict) -> dict:
+            time.sleep(args.row_delay)
+            return run_row(inputs)
+
     results = evaluate(
-        make_target(ctx.build_pipeline, ctx.citation_mode),
+        target,
         data=data,
         evaluators=build_evaluators(ctx.judge),
         experiment_prefix=args.experiment_prefix
