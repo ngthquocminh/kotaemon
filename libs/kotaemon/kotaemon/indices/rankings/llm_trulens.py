@@ -9,6 +9,7 @@ import tiktoken
 from kotaemon.base import Document, HumanMessage, SystemMessage
 from kotaemon.indices.splitters import TokenSplitter
 from kotaemon.llms import BaseLLM, PromptTemplate
+from kotaemon.utils.tracing import run_in_context
 
 from .llm import LLMReranking
 
@@ -145,7 +146,7 @@ class LLMTrulensScoring(LLMReranking):
                     def llm_call():
                         return self.llm(messages).text
 
-                    futures.append(executor.submit(llm_call))
+                    futures.append(executor.submit(run_in_context(llm_call)))
 
                 results = [future.result() for future in futures]
         else:

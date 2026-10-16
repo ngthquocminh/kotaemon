@@ -8,6 +8,7 @@ import numpy as np
 
 from kotaemon.base import AIMessage, Document, HumanMessage, SystemMessage
 from kotaemon.llms import PromptTemplate
+from kotaemon.utils.tracing import reduce_answer, run_in_context, traceable
 
 from .citation_qa import CITATION_TIMEOUT, MAX_IMAGES, AnswerWithContextPipeline
 from .format_context import EVIDENCE_MODE_FIGURE
@@ -190,6 +191,9 @@ class AnswerWithInlineCitation(AnswerWithContextPipeline):
 
         return answer
 
+    @traceable(
+        name="answer_with_inline_citation", run_type="chain", reduce_fn=reduce_answer
+    )
     def stream(  # type: ignore
         self,
         question: str,
@@ -221,7 +225,7 @@ class AnswerWithInlineCitation(AnswerWithContextPipeline):
         # execute function call in thread
         if evidence:
             if self.enable_mindmap:
-                mindmap_thread = threading.Thread(target=mindmap_call)
+                mindmap_thread = threading.Thread(target=run_in_context(mindmap_call))
                 mindmap_thread.start()
 
         messages = []

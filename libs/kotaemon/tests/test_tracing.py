@@ -33,8 +33,9 @@ def test_maybe_wrap_openai_without_langsmith(monkeypatch):
 def test_maybe_wrap_openai_patches_create():
     from openai import OpenAI
 
+    assert "create" not in vars(OpenAI(api_key="sk-test").chat.completions)
     client = maybe_wrap_openai(OpenAI(api_key="sk-test"))
-    assert hasattr(client.chat.completions.create, "__wrapped__")
+    assert "create" in vars(client.chat.completions)  # patched onto the instance
 
 
 def test_run_in_context_carries_contextvar():

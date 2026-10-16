@@ -15,6 +15,7 @@ from kotaemon.base import (
     SystemMessage,
 )
 from kotaemon.llms import ChatLLM, PromptTemplate
+from kotaemon.utils.tracing import reduce_answer, run_in_context, traceable
 
 from .citation import CitationPipeline
 from .format_context import (
@@ -187,6 +188,7 @@ class AnswerWithContextPipeline(BaseComponent):
         """
         raise NotImplementedError
 
+    @traceable(name="answer_with_context", run_type="chain", reduce_fn=reduce_answer)
     def stream(  # type: ignore
         self,
         question: str,
@@ -221,11 +223,11 @@ class AnswerWithContextPipeline(BaseComponent):
         # execute function call in thread
         if evidence:
             if self.enable_citation:
-                citation_thread = threading.Thread(target=citation_call)
+                citation_thread = threading.Thread(target=run_in_context(citation_call))
                 citation_thread.start()
 
             if self.enable_mindmap:
-                mindmap_thread = threading.Thread(target=mindmap_call)
+                mindmap_thread = threading.Thread(target=run_in_context(mindmap_call))
                 mindmap_thread.start()
 
         output = ""

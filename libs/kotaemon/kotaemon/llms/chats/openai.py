@@ -11,6 +11,7 @@ from kotaemon.base import (
     Param,
     StructuredOutputLLMInterface,
 )
+from kotaemon.utils.tracing import maybe_wrap_openai
 
 from .base import ChatLLM
 
@@ -298,11 +299,11 @@ class ChatOpenAI(BaseChatOpenAI):
         if async_version:
             from openai import AsyncOpenAI
 
-            return AsyncOpenAI(**params)
+            return maybe_wrap_openai(AsyncOpenAI(**params))
 
         from openai import OpenAI
 
-        return OpenAI(**params)
+        return maybe_wrap_openai(OpenAI(**params))
 
     def prepare_params(self, **kwargs):
         if "tools_pydantic" in kwargs:
@@ -459,11 +460,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
         if async_version:
             from openai import AsyncAzureOpenAI
 
-            return AsyncAzureOpenAI(**params)
+            return maybe_wrap_openai(AsyncAzureOpenAI(**params))
 
         from openai import AzureOpenAI
 
-        return AzureOpenAI(**params)
+        return maybe_wrap_openai(AzureOpenAI(**params))
 
     def prepare_params(self, **kwargs):
         if "tools_pydantic" in kwargs:
