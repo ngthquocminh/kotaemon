@@ -96,6 +96,8 @@ class SyncPlan:
     create: list[tuple[uuid.UUID, EvalExample]] = field(default_factory=list)
     update: list[tuple[uuid.UUID, EvalExample]] = field(default_factory=list)
     delete: list[uuid.UUID] = field(default_factory=list)
+    # in LangSmith but not in the file, kept because --prune was not given
+    stale: int = 0
 
 
 def plan_sync(
@@ -116,8 +118,11 @@ def plan_sync(
             plan.create.append((ex_id, ex))
         elif (old.inputs or {}) != ex.inputs() or (old.outputs or {}) != ex.outputs():
             plan.update.append((ex_id, ex))
+    missing = [uuid.UUID(key) for key in current if key not in wanted]
     if prune:
-        plan.delete = [uuid.UUID(key) for key in current if key not in wanted]
+        plan.delete = missing
+    else:
+        plan.stale = len(missing)
     return plan
 
 

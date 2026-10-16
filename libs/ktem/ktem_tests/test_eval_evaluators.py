@@ -132,3 +132,21 @@ def test_citation_validity():
     none_claimed = {**OUT, "citations": {"mode": "inline", "claimed": 0, "matched": 0}}
     assert citation_validity(none_claimed)["score"] is None
     assert citation_validity({})["score"] is None
+
+
+def test_retrieval_ignores_relabelled_page_thumbnails():
+    # VectorRetrieval relabels raw page thumbnails as type "image"
+    thumb = {**ctx("Halley's Comet.pdf", "3", "image"), "text": "Page thumbnail"}
+    assert retrieval_hit({**OUT, "contexts": [thumb]}, REF)["score"] == 0.0
+    # an image doc linked to a real chunk keeps the chunk text and still counts
+    linked = {
+        **ctx("Halley's Comet.pdf", "3", "image"),
+        "text": "Its aphelion is 35 AU",
+    }
+    assert retrieval_hit({**OUT, "contexts": [linked]}, REF)["score"] == 1.0
+
+
+def test_judge_think_block_is_ignored():
+    reply = "<think>label: correct? no, the year differs</think>\nLABEL: incorrect"
+    res = make_correctness(lambda p: reply)({"question": "q"}, OUT, REF)
+    assert res["score"] == 0.0

@@ -17,7 +17,7 @@ from langsmith.evaluation import evaluate
 from kotaemon.utils.tracing import export_langsmith_env
 
 from .bootstrap import BootstrapError, bootstrap
-from .dataset import DatasetError, load_dataset, sync_dataset
+from .dataset import DatasetError, example_id, load_dataset, sync_dataset
 from .evaluators import build_evaluators
 from .runner import make_target
 
@@ -108,10 +108,20 @@ def main(argv: Sequence[str] | None = None) -> int:
         f"dataset {dataset_name}: {len(plan.create)} created, "
         f"{len(plan.update)} updated, {len(plan.delete)} deleted"
     )
+    if plan.stale:
+        print(
+            f"note: {plan.stale} examples in LangSmith are not in the file; "
+            "they are skipped (--prune deletes them)"
+        )
+    # evaluate the file's rows only, not every example the dataset holds
+    data = client.list_examples(
+        dataset_name=dataset_name,
+        example_ids=[example_id(dataset_name, ex.question) for ex in examples],
+    )
 
     results = evaluate(
         make_target(ctx.build_pipeline, ctx.citation_mode),
-        data=dataset_name,
+        data=data,
         evaluators=build_evaluators(ctx.judge),
         experiment_prefix=args.experiment_prefix
         or f"{dataset_name}-{ctx.citation_mode}",

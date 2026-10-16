@@ -100,10 +100,10 @@ def test_plan_sync_updates_only_changed_outputs():
 def test_plan_sync_prune_deletes_missing_only_when_asked():
     a, gone = EvalExample("A?", "a"), EvalExample("Gone?", "g")
     existing = [_existing("ds", a), _existing("ds", gone)]
-    assert plan_sync("ds", [a], existing, prune=False).delete == []
-    assert plan_sync("ds", [a], existing, prune=True).delete == [
-        example_id("ds", "Gone?")
-    ]
+    kept = plan_sync("ds", [a], existing, prune=False)
+    assert kept.delete == [] and kept.stale == 1
+    pruned = plan_sync("ds", [a], existing, prune=True)
+    assert pruned.delete == [example_id("ds", "Gone?")] and pruned.stale == 0
 
 
 def test_sync_dataset_creates_dataset_and_examples():

@@ -11,6 +11,8 @@ import os
 import re
 from typing import Callable, Iterable
 
+from .cleaning import strip_think
+
 Judge = Callable[[str], str]
 
 CORRECTNESS_LABELS = {"correct": 1.0, "partially_correct": 0.5, "incorrect": 0.0}
@@ -73,7 +75,7 @@ def _judge(key: str, judge: Judge, prompt: str, labels: dict[str, float]) -> dic
         reply = judge(prompt)
     except Exception as exc:
         return _result(key, None, f"judge error: {exc}")
-    label = parse_label(reply, labels)
+    label = parse_label(strip_think(reply), labels)
     if label is None:
         return _result(key, None, f"unparseable judge reply: {reply}")
     return _result(key, labels[label], reply)
@@ -111,13 +113,22 @@ def make_groundedness(judge: Judge) -> Callable[[dict], dict]:
     return groundedness
 
 
+def _is_thumbnail(context: dict) -> bool:
+    # VectorRetrieval relabels raw page thumbnails as type "image"; their text
+    # stays "Page thumbnail". Image docs linked to a chunk carry the chunk text.
+    return (
+        context.get("type") == "thumbnail"
+        or (context.get("text") or "").strip() == "Page thumbnail"
+    )
+
+
 def _first_hit_rank(outputs: dict, reference_outputs: dict) -> int | None:
     """1-based rank of the first non-thumbnail context matching the source."""
     target = os.path.basename(reference_outputs["source_file"]).lower()
     page = reference_outputs.get("page")
     rank = 0
     for context in outputs["contexts"]:
-        if context.get("type") == "thumbnail":
+        if _is_thumbnail(context):
             continue
         rank += 1
         name = os.path.basename(context.get("file_name") or "").lower()

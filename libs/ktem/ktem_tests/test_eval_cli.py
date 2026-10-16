@@ -71,7 +71,7 @@ def setup(tmp_path, monkeypatch, mocker):
     mocker.patch.object(
         cli,
         "sync_dataset",
-        return_value=SimpleNamespace(create=[1], update=[], delete=[]),
+        return_value=SimpleNamespace(create=[1], update=[], delete=[], stale=3),
     )
     calls: dict = {}
     mocker.patch.object(
@@ -87,13 +87,25 @@ def test_main_happy_path(setup, capsys):
     assert cli.main(["--dataset", str(setup.path)]) == 0
     out = capsys.readouterr().out
     assert "dataset akkad: 1 created, 0 updated, 0 deleted" in out
+    assert "3 examples in LangSmith are not in the file" in out
     assert "experiment: exp-1" in out
     assert "correctness" in out and "1.00" in out and "retrieval_hit" in out
     assert setup.calls == {
-        "data": "akkad",
+        "data": setup.client_cls.return_value.list_examples.return_value,
         "prefix": "akkad-highlight",
         "max_concurrency": 2,
         "metadata": {"index": "File Collection"},
+    }
+
+
+def test_main_evaluates_only_the_files_examples(setup):
+    from ktem.evals.dataset import example_id
+
+    assert cli.main(["--dataset", str(setup.path)]) == 0
+    kwargs = setup.client_cls.return_value.list_examples.call_args.kwargs
+    assert kwargs == {
+        "dataset_name": "akkad",
+        "example_ids": [example_id("akkad", "Who founded Akkad?")],
     }
 
 
