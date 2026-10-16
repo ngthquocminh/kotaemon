@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any, Optional, Type
+from typing import Any, Optional, Sequence, Type
 
 from ktem.components import filestorage_path, get_docstore, get_vectorstore
 from ktem.db.engine import engine
@@ -8,6 +8,8 @@ from ktem.index.base import BaseIndex
 from sqlalchemy import JSON, Column, DateTime, Integer, String, UniqueConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import Session
+from sqlalchemy.sql import select
 from theflow.settings import settings as flowsettings
 from theflow.utils.modules import import_dotted_string
 from tzlocal import get_localzone
@@ -459,6 +461,34 @@ class FileIndex(BaseIndex):
 
         return obj
 
+    def get_selected_ids(self, selected: Optional[Sequence[Any]]) -> list[str]:
+        """Resolve a selector value ``[mode, file_ids, user_id]`` to file ids.
+
+        Needs no UI, so the eval CLI can call it on a headless app.
+        """
+        if not selected or len(selected) < 3:
+            return []
+
+        mode, file_ids, user_id = selected[0], selected[1], selected[2]
+        if user_id is None:
+            return []
+
+        if mode == "disabled":
+            return []
+        elif mode == "select":
+            return file_ids
+
+        ids = []
+        with Session(engine) as session:
+            statement = select(self._resources["Source"].id)
+            if self.config.get("private", False):
+                statement = statement.where(self._resources["Source"].user == user_id)
+            results = session.execute(statement).all()
+            for (id,) in results:
+                ids.append(id)
+
+        return ids
+
     def get_retriever_pipelines(
         self, settings: dict, user_id: int, selected: Any = None
     ) -> list["BaseFileIndexRetriever"]:
@@ -470,7 +500,7 @@ class FileIndex(BaseIndex):
                 stripped_settings[key[len(prefix) :]] = value
 
         # transform selected id
-        selected_ids: Optional[list[str]] = self._selector_ui.get_selected_ids(selected)
+        selected_ids: Optional[list[str]] = self.get_selected_ids(selected)
 
         retrievers = []
         for cls in self._retriever_pipeline_cls:

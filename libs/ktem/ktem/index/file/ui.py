@@ -1798,27 +1798,7 @@ class FileSelector(BasePage):
         return [self.mode, self.selector, self.selector_user_id]
 
     def get_selected_ids(self, components):
-        mode, selected, user_id = components[0], components[1], components[2]
-        if user_id is None:
-            return []
-
-        if mode == "disabled":
-            return []
-        elif mode == "select":
-            return selected
-
-        file_ids = []
-        with Session(engine) as session:
-            statement = select(self._index._resources["Source"].id)
-            if self._index.config.get("private", False):
-                statement = statement.where(
-                    self._index._resources["Source"].user == user_id
-                )
-            results = session.execute(statement).all()
-            for (id,) in results:
-                file_ids.append(id)
-
-        return file_ids
+        return self._index.get_selected_ids(components)
 
     def load_files(self, selected_files, user_id):
         options: list = []
