@@ -321,8 +321,12 @@ Evaluators are pure functions of `outputs` and `reference_outputs`. Missing
   documents this.
 - PDF indexing also stores one "Page thumbnail" document per page
   (`metadata["type"] == "thumbnail"`, with `file_name` and `page_label`), and
-  vector search can return it. Retrieval evaluators skip these contexts, or a
-  contentless thumbnail would count as a hit.
+  vector search can return it. `VectorRetrieval` relabels such docs as
+  `type == "image"` (`kotaemon/indices/vectorindex.py:259-261`), keeping the
+  text "Page thumbnail". Retrieval evaluators skip a context whose type is
+  `thumbnail` or whose text is "Page thumbnail", or a contentless thumbnail
+  would count as a hit. Image docs linked to a chunk keep the chunk text and
+  still count.
 - For PDFs, the default reader (`PDFThumbnailReader`,
   `kotaemon/loaders/pdf_loader.py:81-93`) sets `page_label` to the PDF's own
   page label from pypdf, not the physical page position. It also **drops**
