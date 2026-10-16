@@ -61,7 +61,9 @@ def test_citation_facts_inline_missing_phrase():
         metadata={
             "citation": [
                 InlineEvidence(
-                    idx=1, start_phrase="Sargon of Akkad", end_phrase="founded the empire"
+                    idx=1,
+                    start_phrase="Sargon of Akkad",
+                    end_phrase="founded the empire",
                 ),
                 InlineEvidence(
                     idx=2, start_phrase="Halley comet orbit text", end_phrase=None

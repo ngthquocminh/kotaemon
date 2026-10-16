@@ -117,9 +117,7 @@ def plan_sync(
         elif (old.inputs or {}) != ex.inputs() or (old.outputs or {}) != ex.outputs():
             plan.update.append((ex_id, ex))
     if prune:
-        plan.delete = [
-            uuid.UUID(key) for key in current if key not in wanted
-        ]
+        plan.delete = [uuid.UUID(key) for key in current if key not in wanted]
     return plan
 
 

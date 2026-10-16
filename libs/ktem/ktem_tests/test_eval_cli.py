@@ -17,7 +17,14 @@ ROWS = (
 
 def fake_evaluate(calls, examples):
     def _evaluate(
-        target, *, data, evaluators, experiment_prefix, max_concurrency, metadata, client
+        target,
+        *,
+        data,
+        evaluators,
+        experiment_prefix,
+        max_concurrency,
+        metadata,
+        client,
     ):
         calls.update(
             data=data,

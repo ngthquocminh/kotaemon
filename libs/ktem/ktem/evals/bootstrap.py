@@ -126,8 +126,7 @@ def bootstrap(
         "dataset": dataset_name,
         "user": username or user_id,
         "index": idx.name,
-        "llm": settings.get("reasoning.options.simple.llm")
-        or llms.get_default_name(),
+        "llm": settings.get("reasoning.options.simple.llm") or llms.get_default_name(),
         "judge_llm": llms.get_default_name(),
         "citation": settings[CITATION_KEY],
         "retrieval_mode": settings.get(prefix + "retrieval_mode"),

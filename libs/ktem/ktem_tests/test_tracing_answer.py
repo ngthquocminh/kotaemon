@@ -1,4 +1,5 @@
-"""Answer pipelines import ktem (citation_qa -> ktem.llms), so these run from the repo root."""
+"""Answer pipelines import ktem (citation_qa -> ktem.llms): run from the repo root."""
+
 from langsmith.run_helpers import get_current_run_tree, tracing_context
 
 from kotaemon.base import BaseComponent

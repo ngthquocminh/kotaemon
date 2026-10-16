@@ -73,15 +73,17 @@ def test_correctness_empty_answer_scores_zero_without_judge():
 
 
 def test_correctness_missing_outputs_is_none():
-    assert make_correctness(lambda p: "correct")({"question": "q"}, {}, REF)[
-        "score"
-    ] is None
+    assert (
+        make_correctness(lambda p: "correct")({"question": "q"}, {}, REF)["score"]
+        is None
+    )
 
 
 def test_correctness_unparseable_or_error_is_none():
-    assert make_correctness(lambda p: "no idea")({"question": "q"}, OUT, REF)[
-        "score"
-    ] is None
+    assert (
+        make_correctness(lambda p: "no idea")({"question": "q"}, OUT, REF)["score"]
+        is None
+    )
 
     def boom(_):
         raise RuntimeError("boom")
@@ -92,12 +94,13 @@ def test_correctness_unparseable_or_error_is_none():
 
 def test_groundedness():
     assert make_groundedness(lambda p: "LABEL: grounded")(OUT)["score"] == 1.0
-    assert make_groundedness(lambda p: "grounded")({**OUT, "evidence": ""})[
-        "score"
-    ] is None
-    assert make_groundedness(lambda p: "grounded")({**OUT, "answer": ""})[
-        "score"
-    ] is None
+    assert (
+        make_groundedness(lambda p: "grounded")({**OUT, "evidence": ""})["score"]
+        is None
+    )
+    assert (
+        make_groundedness(lambda p: "grounded")({**OUT, "answer": ""})["score"] is None
+    )
     assert make_groundedness(lambda p: "grounded")({})["score"] is None
 
 
@@ -118,9 +121,7 @@ def test_retrieval_ignores_thumbnails():
 
 def test_reciprocal_rank():
     assert reciprocal_rank(OUT, REF)["score"] == 0.5
-    assert reciprocal_rank({**OUT, "contexts": [ctx("other.pdf")]}, REF)[
-        "score"
-    ] == 0.0
+    assert reciprocal_rank({**OUT, "contexts": [ctx("other.pdf")]}, REF)["score"] == 0.0
     assert reciprocal_rank(OUT, {"reference_answer": "x"})["score"] is None
 
 

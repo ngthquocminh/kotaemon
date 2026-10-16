@@ -1,4 +1,5 @@
 """Stub components for tracing and eval tests: no LLM, no index, no network."""
+
 from typing import Any
 
 from langsmith.run_helpers import get_current_run_tree
