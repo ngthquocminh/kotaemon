@@ -44,7 +44,9 @@ def find_text(search_span, context, min_length=5):
 def find_start_end_phrase(
     start_phrase, end_phrase, context, min_length=5, max_excerpt_length=300
 ):
-    start_phrase, end_phrase = start_phrase.lower(), end_phrase.lower()
+    # either phrase may be missing (None) in a parsed citation; skip it below
+    start_phrase = start_phrase.lower() if start_phrase else None
+    end_phrase = end_phrase.lower() if end_phrase else None
     context = context.lower()
 
     context = context.replace("\n", " ")
