@@ -150,3 +150,11 @@ def test_judge_think_block_is_ignored():
     reply = "<think>label: correct? no, the year differs</think>\nLABEL: incorrect"
     res = make_correctness(lambda p: reply)({"question": "q"}, OUT, REF)
     assert res["score"] == 0.0
+
+
+def test_scores_fit_langsmith_precision():
+    # LangSmith rejects feedback scores with more than 4 decimal places (HTTP 422)
+    out = {**OUT, "contexts": [ctx("a.pdf"), ctx("b.pdf"), ctx("halley's comet.pdf", "3")]}
+    assert reciprocal_rank(out, REF)["score"] == 0.3333
+    thirds = {**OUT, "citations": {"mode": "highlight", "claimed": 3, "matched": 2}}
+    assert citation_validity(thirds)["score"] == 0.6667

@@ -52,6 +52,9 @@ _NO_OUTPUTS = "target failed; no outputs"
 
 
 def _result(key: str, score: float | None, comment: str) -> dict:
+    # LangSmith rejects scores with more than 4 decimal places (HTTP 422)
+    if score is not None:
+        score = round(score, 4)
     return {"key": key, "score": score, "comment": comment}
 
 
